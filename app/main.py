@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 import re
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
@@ -9,11 +10,19 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+def __get_token() -> str:
+    """
+        :Return: telegram token which we add in docker file
+    """
+    return os.environ.get("telegram_token")
+
 def __is_on_whitelist(whom_to_check:str) -> bool:
     """
         Checks if user is on whitelist.
         
-        Add usernames to whitelist to get more privileges
+        Add usernames to whitelist separated with commas to get more privileges.
+        
+        EXAMPLE: you have nickname @myNick you need to add myNick. If you need more than one user list gonna be like ["Nickname1","Nickname2"].
         
         :Return: True of False
     """
@@ -100,6 +109,13 @@ def __find_beer_by_part_of_name(what_to_search:str, where) -> list:
     return res
         
 def __delete_beer(beer_to_delete: str):
+    """
+        If you in white list you can use this function.
+        
+        This function delete beer if you want so.
+        
+        Activates by press button under beer, when you find one.
+    """
     file_data = __read_file()
     if beer_to_delete.lower() in file_data:
         del file_data[beer_to_delete.lower()]
@@ -295,7 +311,7 @@ async def end_conv(update:Update, context: ContextTypes.DEFAULT_TYPE):
     
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token("CHANGE_ME").build()
+    application = ApplicationBuilder().token(__get_token()).build()
     
     start_handler = CommandHandler("start", start)
     help_handler = CommandHandler('help', reply_help)
@@ -312,7 +328,7 @@ if __name__ == "__main__":
                 CallbackQueryHandler(goto_delete_beer, pattern=f"^{str(DELETE_BUTTON)}$")
             ],
             ADD_BEER:[
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex('^quit$')), add_beer_to_db),
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex('^Quit$')), add_beer_to_db),
             ],
             WRITE_BEER:[
                 CallbackQueryHandler(confirmation_add_beer, pattern=f'^{str(CONFIRM_BUTTON)}$'),                
@@ -323,7 +339,7 @@ if __name__ == "__main__":
                 CallbackQueryHandler(not_delete_beer_from_db, pattern=f"^{str(REDO_BUTTON)}$"),
             ],
             FIND_BEER:[
-                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex('^quit$')), find_beer_by_name)
+                MessageHandler(filters.TEXT & ~(filters.COMMAND | filters.Regex('^Quit$')), find_beer_by_name)
             ]
             },
         fallbacks=[MessageHandler(filters.Regex("^Quit$"),end_conv)]
