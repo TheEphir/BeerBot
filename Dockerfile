@@ -8,7 +8,7 @@ RUN apk add --no-cache py3-pip
 RUN pip install telegram
 RUN pip install python-telegram-bot
 
-COPY /app .
+COPY ./app .
 
 EXPOSE 8080
 
